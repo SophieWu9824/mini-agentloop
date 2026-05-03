@@ -11,6 +11,18 @@
       "command": "uvx",
       "args": ["--from", "mcp-weather-server", "mcp_weather_server"],
       "env": null
+    },
+    {
+      "name": "12306",
+      "command": "npx",
+      "args": ["-y", "12306-mcp"],
+      "env": null
+    },
+    {
+      "name": "search",
+      "command": "uvx",
+      "args": ["mcp-server-googlesearch"],
+      "env": null
     }
   ]
 }
