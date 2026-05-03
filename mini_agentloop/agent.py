@@ -1,8 +1,10 @@
+import asyncio
 import json
 
-from config import call_model
-from tools import TOOL_DEFINITIONS, execute_tool
-from memory import load_context, save_observation
+from mini_agentloop.config import call_model
+from mini_agentloop.tools import TOOL_DEFINITIONS, execute_tool
+from mini_agentloop.memory import load_context, save_observation
+from mini_agentloop.mcp_client import MCPToolManager, load_mcp_servers_from_config
 
 MAX_STEPS = 8
 MAX_TOOL_CALLS = 20
@@ -13,7 +15,8 @@ Workflow:
 1. Understand the user's task.
 2. Use list_files and read_file to explore the codebase.
 3. Use run_command to run safe commands (tests, lint, etc.) when needed.
-4. When you have enough information, provide a clear answer.
+4. Use MCP tools (prefixed with mcp__) for extended capabilities when available.
+5. When you have enough information, provide a clear answer.
 
 Rules:
 - Always explore before answering.
@@ -25,7 +28,29 @@ Rules:
 - You will be told the current step number at each turn."""
 
 
+def _build_all_tools(mcp_manager: MCPToolManager) -> list[dict]:
+    return TOOL_DEFINITIONS + mcp_manager.tool_definitions
+
+
+def _execute_tool_call(fn_name: str, fn_args: dict, mcp_manager: MCPToolManager) -> str:
+    if fn_name in ("list_files", "read_file", "run_command"):
+        return execute_tool(fn_name, fn_args)
+
+    if fn_name.startswith("mcp__"):
+        return asyncio.run(mcp_manager.call_tool(fn_name, fn_args))
+
+    return f"Error: Unknown tool '{fn_name}'."
+
+
 def run_agent(task: str, workspace: str = "") -> str:
+    print("[Init] Loading MCP servers...")
+    mcp_manager = load_mcp_servers_from_config()
+    asyncio.run(mcp_manager.discover_tools())
+
+    all_tools = _build_all_tools(mcp_manager)
+    print(f"[Init] Total tools available: {len(all_tools)} "
+          f"(local: {len(TOOL_DEFINITIONS)}, mcp: {len(mcp_manager.tool_definitions)})")
+
     messages = load_context(workspace)
     messages.append({"role": "system", "content": SYSTEM_PROMPT.format(max_steps=MAX_STEPS)})
     messages.append({"role": "user", "content": task})
@@ -38,7 +63,7 @@ def run_agent(task: str, workspace: str = "") -> str:
 
         messages.append({"role": "user", "content": step_info})
 
-        response = call_model(messages, tools=TOOL_DEFINITIONS)
+        response = call_model(messages, tools=all_tools)
 
         messages.append(response.to_dict())
 
@@ -62,7 +87,7 @@ def run_agent(task: str, workspace: str = "") -> str:
 
             print(f"  [Tool Call] {fn_name}({fn_args})")
 
-            observation = execute_tool(fn_name, fn_args)
+            observation = _execute_tool_call(fn_name, fn_args, mcp_manager)
             print(f"  [Observation] {observation[:200]}{'...' if len(observation) > 200 else ''}")
 
             save_observation(f"tool:{fn_name}", observation)

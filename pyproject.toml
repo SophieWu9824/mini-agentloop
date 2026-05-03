@@ -1,0 +1,13 @@
+[project]
+name = "mini-agentloop"
+version = "0.1.0"
+description = "A minimal Agent Loop: LLM + Tools + Loop + Memory + MCP"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]>=1.27.0",
+    "openai>=2.33.0",
+    "python-dotenv>=1.2.2",
+]
+
+[project.scripts]
+mini-agentloop = "main:main"

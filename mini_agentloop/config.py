@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 API_KEY = os.environ.get("AGENTLOOP_API_KEY", "YOUR_API_KEY_HERE")
 BASE_URL = os.environ.get("AGENTLOOP_API_BASE_URL", "https://api.openai.com/v1")

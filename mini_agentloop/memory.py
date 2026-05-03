@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-MEMORY_DIR = os.path.join(os.path.dirname(__file__), "memory")
+MEMORY_DIR = os.path.join(os.path.dirname(__file__), "..", "memory")
 
 
 def _ensure_memory_dir():

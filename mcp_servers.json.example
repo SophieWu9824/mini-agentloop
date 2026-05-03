@@ -1,0 +1,16 @@
+{
+  "mcpServers": [
+    {
+      "name": "sqlite",
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "/tmp/test.db"],
+      "env": null
+    },
+    {
+      "name": "weather",
+      "command": "uvx",
+      "args": ["--from", "mcp-weather-server", "mcp_weather_server"],
+      "env": null
+    }
+  ]
+}
